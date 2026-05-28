@@ -62,7 +62,7 @@ def _load_system_prompt() -> str:
     return "You are a helpful, friendly assistant with a sharp sense of humor."
 
 
-def generate_answer(prompt: str, api_key: str) -> str:
+def generate_answer(prompt: str) -> str:
     """Generate answer using OpenAI GPT-4."""
     logger.info("\n" + "="*60)
     logger.info("[ANSWER] Sending augmented prompt to OpenAI GPT-4...")
@@ -70,7 +70,7 @@ def generate_answer(prompt: str, api_key: str) -> str:
     logger.info("="*60)
     logger.info(f"\n[ANSWER] === FULL PROMPT SENT TO LLM ===\n{prompt}\n{'='*60}")
 
-    client = OpenAI(api_key=api_key or OPENAI_API_KEY)
+    client = OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
@@ -86,7 +86,6 @@ def generate_answer(prompt: str, api_key: str) -> str:
 
 def query_powerpanda(
     query: str,
-    api_key: str,
     vectorstore: FAISS = None,
     graph_name: str = "powerpanda",
     node_embeddings_cache: dict = None,
@@ -111,7 +110,7 @@ def query_powerpanda(
     try:
         graph = get_graph(graph_name)
         relevant_nodes = find_relevant_nodes_by_embedding(
-            query, graph, api_key, top_k=top_k_nodes,
+            query, graph, top_k=top_k_nodes,
             node_embeddings_cache=node_embeddings_cache,
         )
 
@@ -150,7 +149,7 @@ def query_powerpanda(
     # Step 4: Build augmented prompt and generate answer
     logger.info(f"\n[QUERY] STEP 4: Building augmented prompt and generating answer...")
     prompt = build_powerpanda_prompt(query, graph_context, doc_context)
-    answer = generate_answer(prompt, api_key)
+    answer = generate_answer(prompt)
 
     logger.info(f"\n[QUERY] === PIPELINE COMPLETE ===\n")
     return answer, source_docs, graph_context, relevant_nodes

@@ -61,18 +61,15 @@ function removeFile(i) {
 
 /* ── Process Files ───────────────────────────────────────────── */
 async function processFiles() {
-  const apiKey    = document.getElementById('apiKey').value.trim();
   const graphName = document.getElementById('graphName').value.trim();
   const statusEl  = document.getElementById('uploadStatus');
 
-  // API key is optional — backend falls back to .env
   if (!selectedFiles.length) return;
 
   setStatus('busy', 'Processing…');
   document.getElementById('processBtn').disabled = true;
 
   const form = new FormData();
-  form.append('api_key', apiKey);
   form.append('graph_name', graphName);
   selectedFiles.forEach(f => form.append('files', f));
 
@@ -118,14 +115,12 @@ async function loadEmbeddedFiles() {
 /* ── Query ───────────────────────────────────────────────────── */
 async function runQuery() {
   const query     = document.getElementById('queryInput').value.trim();
-  const apiKey    = document.getElementById('apiKey').value.trim();
   const graphName = document.getElementById('graphName').value.trim();
   const topKDocs  = +document.getElementById('topKDocs').value;
   const topKNodes = +document.getElementById('topKNodes').value;
   const hops      = +document.getElementById('hops').value;
 
   if (!query)  return;
-  // API key is optional — backend falls back to .env
 
   document.getElementById('queryResult').classList.add('hidden');
   document.getElementById('queryLoader').classList.remove('hidden');
@@ -136,7 +131,7 @@ async function runQuery() {
     const res  = await fetch('/api/query', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, api_key: apiKey, graph_name: graphName,
+      body: JSON.stringify({ query, graph_name: graphName,
                              top_k_docs: topKDocs, top_k_nodes: topKNodes, hops }),
     });
     const data = await res.json();

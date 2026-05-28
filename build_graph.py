@@ -167,7 +167,6 @@ def get_all_node_names(graph: InMemoryGraph) -> list[str]:
 def find_relevant_nodes_by_embedding(
     query: str,
     graph: InMemoryGraph,
-    api_key: str,
     top_k: int = 5,
     node_embeddings_cache: dict = None,
 ) -> list[str]:
@@ -176,7 +175,7 @@ def find_relevant_nodes_by_embedding(
         return []
     embeddings_model = OpenAIEmbeddings(
         model="text-embedding-ada-002",
-        api_key=api_key or OPENAI_API_KEY,
+        api_key=OPENAI_API_KEY,
     )
 
     node_names = get_all_node_names(graph)

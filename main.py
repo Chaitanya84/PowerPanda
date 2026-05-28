@@ -82,6 +82,15 @@ def _get_embeddings(api_key: str) -> OpenAIEmbeddings:
     )
 
 
+def _require_openai_api_key() -> str:
+    if not OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="OPENAI_API_KEY is not set in the Render environment.",
+        )
+    return OPENAI_API_KEY
+
+
 def _load_vectorstore(api_key: str) -> FAISS | None:
     faiss_path = STORE_DIR / "powerpanda_faiss"
     if faiss_path.exists():
@@ -175,15 +184,12 @@ async def list_files():
 @app.post("/api/upload")
 async def upload_files(
     files: list[UploadFile] = File(...),
-    api_key: str = Form(""),
     graph_name: str = Form("powerpanda"),
 ):
     """Process uploaded files: embed into FAISS + extract graph."""
     global _vectorstore, _node_emb_cache
 
-    api_key = api_key or OPENAI_API_KEY
-    if not api_key:
-        raise HTTPException(status_code=400, detail="API key not set in .env or request")
+    api_key = _require_openai_api_key()
     embedded = _load_embedded_files()
     splitter  = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     embeddings_model = _get_embeddings(api_key)
@@ -232,7 +238,7 @@ async def upload_files(
         _save_vectorstore(_vectorstore, api_key)
 
         # Extract entities/relations and rebuild graph
-        entities, relations = extract_from_documents(all_texts, api_key)
+        entities, relations = extract_from_documents(all_texts)
         build_knowledge_graph(entities, relations, graph_name)
         _node_emb_cache = {}  # invalidate node embedding cache
 
@@ -250,7 +256,6 @@ async def query(
 
     body = await request.json()
     query_text: str = body.get("query", "").strip()
-    api_key:    str = body.get("api_key", "") or OPENAI_API_KEY
     graph_name: str = body.get("graph_name", "powerpanda")
     top_k_docs: int = body.get("top_k_docs", 4)
     top_k_nodes:int = body.get("top_k_nodes", 5)
@@ -258,15 +263,14 @@ async def query(
 
     if not query_text:
         raise HTTPException(status_code=400, detail="Query cannot be empty")
-    if not api_key:
-        raise HTTPException(status_code=400, detail="API key required")
+
+    api_key = _require_openai_api_key()
 
     if _vectorstore is None:
         _vectorstore = _load_vectorstore(api_key)
 
     answer, source_docs, graph_context, relevant_nodes = query_powerpanda(
         query=query_text,
-        api_key=api_key,
         vectorstore=_vectorstore,
         graph_name=graph_name,
         node_embeddings_cache=_node_emb_cache,

@@ -35,13 +35,12 @@ class Relation:
     relation_type: str
 
 
-def _get_openai_client(api_key: str = None) -> OpenAI:
+def _get_openai_client() -> OpenAI:
     """Create OpenAI client."""
-    key = api_key or OPENAI_API_KEY
-    return OpenAI(api_key=key)
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 
-def _extract_with_llm(text: str, api_key: str = None) -> tuple[list[Entity], list[Relation]]:
+def _extract_with_llm(text: str) -> tuple[list[Entity], list[Relation]]:
     """Extract entities and relations using OpenAI GPT-4."""
     prompt = (
         "Extract all entities and relations from the following text.\n"
@@ -59,7 +58,7 @@ def _extract_with_llm(text: str, api_key: str = None) -> tuple[list[Entity], lis
     logger.info(f"[EXTRACT] Text preview (first 200 chars): {text[:200]}...")
     logger.info("="*60)
 
-    client = _get_openai_client(api_key)
+    client = _get_openai_client()
     response = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=[
@@ -95,7 +94,7 @@ def _extract_with_llm(text: str, api_key: str = None) -> tuple[list[Entity], lis
     return entities, relations
 
 
-def extract_from_documents(documents: list[str], api_key: str = None) -> tuple[list[Entity], list[Relation]]:
+def extract_from_documents(documents: list[str]) -> tuple[list[Entity], list[Relation]]:
     """Process all documents and return entities + relations using LLM extraction."""
     all_entities = []
     all_relations = []
@@ -106,7 +105,7 @@ def extract_from_documents(documents: list[str], api_key: str = None) -> tuple[l
 
     for i, doc in enumerate(documents):
         logger.info(f"\n[EXTRACT] --- Processing Document {i+1}/{len(documents)} ---")
-        entities, relations = _extract_with_llm(doc, api_key)
+        entities, relations = _extract_with_llm(doc)
         all_entities.extend(entities)
         all_relations.extend(relations)
 
