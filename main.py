@@ -7,6 +7,7 @@ import hashlib
 import json
 import shutil
 import tempfile
+import secrets
 from pathlib import Path
 
 import numpy as np
@@ -50,7 +51,8 @@ EMBEDDED_FILES_RECORD = STORE_DIR / "embedded_files.json"
 app = FastAPI(title="OraKa", version="1.0.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/assets", StaticFiles(directory="."), name="assets")   # serves Logo.png
-templates = Jinja2Templates(directory="templates")
+TEMPLATE_DIR = "templates" if Path("templates").exists() else "template"
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 # ── In-process caches (single-worker dev mode) ────────────────────────────────
 _node_emb_cache: dict = {}
@@ -115,11 +117,24 @@ def _parse_file(tmp_path: str, filename: str) -> list[Document]:
     return [Document(page_content=text, metadata={"source_file": filename})]
 
 
-# ── Simple user store (replace with DB in production) ─────────────────────────
-USERS = {
-    "admin": "powerpanda2026",
-    "demo": "demo123",
-}
+# ── Auth configuration (env-driven) ───────────────────────────────────────────
+AUTH_USERNAME = (
+    os.getenv("POWERPANDA_USERNAME")
+    or os.getenv("APP_USERNAME")
+    or os.getenv("LOGIN_USERNAME")
+    or "admin"
+)
+AUTH_PASSWORD = (
+    os.getenv("POWERPANDA_PASSWORD")
+    or os.getenv("APP_PASSWORD")
+    or os.getenv("LOGIN_PASSWORD")
+    or "powerpanda2026"
+)
+
+if not (os.getenv("POWERPANDA_USERNAME") or os.getenv("APP_USERNAME") or os.getenv("LOGIN_USERNAME")):
+    logging.warning("No username env var found. Falling back to default username.")
+if not (os.getenv("POWERPANDA_PASSWORD") or os.getenv("APP_PASSWORD") or os.getenv("LOGIN_PASSWORD")):
+    logging.warning("No password env var found. Falling back to default password.")
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -135,7 +150,7 @@ async def login(request: Request):
     body = await request.json()
     username = body.get("username", "").strip()
     password = body.get("password", "")
-    if username in USERS and USERS[username] == password:
+    if secrets.compare_digest(username, AUTH_USERNAME) and secrets.compare_digest(password, AUTH_PASSWORD):
         return {"token": "authenticated", "user": username}
     raise HTTPException(status_code=401, detail="Invalid username or password.")
 

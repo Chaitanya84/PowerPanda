@@ -81,6 +81,10 @@ A Graph-enhanced RAG application that answers questions about your documents by 
 Create a `.env` file in the project root:
 
 ```env
+# Login credentials for the web app
+POWERPANDA_USERNAME=admin
+POWERPANDA_PASSWORD=change-me
+
 # GenAI-Nexus API Key (used for embeddings and Claude)
 NEXUS_API_KEY=your-api-key-here
 
