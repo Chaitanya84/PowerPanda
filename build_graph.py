@@ -174,8 +174,9 @@ def find_relevant_nodes_by_embedding(
     """Find relevant graph nodes using embedding similarity (text-embedding-ada-002)."""
     if graph is None:
         return []
-    embeddings_model = OpenAIEmbeddings( model="text-embedding-ada-002", api_key=api_key or OPENAI_API_KEY,)
-        api_key=api_key,
+    embeddings_model = OpenAIEmbeddings(
+        model="text-embedding-ada-002",
+        api_key=api_key or OPENAI_API_KEY,
     )
 
     node_names = get_all_node_names(graph)
