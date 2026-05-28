@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="author" content="Chaitanya Priya"/>
+  <meta name="copyright" content="© 2026 Chaitanya Priya. All rights reserved."/>
+  <title>PowerPanda — Knowledge Graph</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0f14;
+      color: #e2e6f3;
+      font-family: 'Inter', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .toolbar {
+      background: #13161e;
+      border-bottom: 1px solid #252a38;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .toolbar h1 {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #5b6ef5, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .toolbar .controls {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .toolbar button {
+      background: #1a1e2a;
+      border: 1px solid #252a38;
+      color: #e2e6f3;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .toolbar button:hover { background: #252a38; }
+    .toolbar .info {
+      font-size: 12px;
+      color: #5a6080;
+    }
+    #graph-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+    #graph-container:active { cursor: grabbing; }
+    #graph-wrapper {
+      transform-origin: 0 0;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    #graph-wrapper svg { display: block; }
+    .node-dimmed rect, .node-dimmed polygon, .node-dimmed circle { opacity: 0.15 !important; }
+    .node-dimmed .nodeLabel { opacity: 0.15 !important; }
+    .edge-dimmed path { opacity: 0.08 !important; }
+    .edge-dimmed .edgeLabel { opacity: 0.08 !important; }
+    .node-highlighted rect, .node-highlighted polygon, .node-highlighted circle {
+      stroke: #5b6ef5 !important;
+      stroke-width: 3px !important;
+      filter: drop-shadow(0 0 8px rgba(91,110,245,0.6));
+    }
+    .edge-highlighted path {
+      stroke: #8b5cf6 !important;
+      stroke-width: 2.5px !important;
+    }
+    .edge-highlighted .edgeLabel { opacity: 1 !important; color: #8b5cf6 !important; }
+    .legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: rgba(19,22,30,0.9);
+      border: 1px solid #252a38;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 11px;
+      color: #5a6080;
+    }
+    .footer {
+      background: #13161e;
+      border-top: 1px solid #252a38;
+      text-align: center;
+      padding: 8px;
+      font-size: 11px;
+      color: #5a6080;
+      flex-shrink: 0;
+    }
+    .loading {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      color: #5a6080;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>🕸 PowerPanda Knowledge Graph</h1>
+    <div class="controls">
+      <span class="info" id="graphInfo">Loading...</span>
+      <button onclick="zoomIn()">➕ Zoom In</button>
+      <button onclick="zoomOut()">➖ Zoom Out</button>
+      <button onclick="resetView()">🔄 Reset</button>
+      <button onclick="clearSelection()">✖ Clear Selection</button>
+      <button onclick="window.close()">✕ Close</button>
+    </div>
+  </div>
+
+  <div id="graph-container">
+    <div id="graph-wrapper"></div>
+    <div class="loading" id="loadingMsg">⏳ Rendering graph...</div>
+    <div class="legend">
+      💡 Click a node to highlight its connections. Scroll to zoom. Drag to pan.
+    </div>
+  </div>
+
+  <div class="footer">© 2026 Chaitanya Priya. All rights reserved. | PowerPanda™</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+
+    let scale = 1, translateX = 0, translateY = 0;
+    let isDragging = false, startX, startY;
+    let edges = []; // parsed edge info
+
+    async function loadGraph() {
+      try {
+        const res = await fetch('/api/graph?graph_name=powerpanda');
+        const data = await res.json();
+
+        document.getElementById('graphInfo').textContent =
+          `${data.node_count} nodes · ${data.edge_count} edges`;
+
+        const wrapper = document.getElementById('graph-wrapper');
+        const { svg } = await mermaid.render('mermaidGraph', data.mermaid);
+        wrapper.innerHTML = svg;
+        document.getElementById('loadingMsg').style.display = 'none';
+
+        // Parse edges from SVG for highlighting
+        parseEdges();
+        // Attach click handlers to nodes
+        attachNodeClickHandlers();
+        // Fit to view
+        resetView();
+      } catch (err) {
+        document.getElementById('loadingMsg').textContent = '❌ Failed to load graph: ' + err.message;
+      }
+    }
+
+    function parseEdges() {
+      edges = [];
+      const edgeEls = document.querySelectorAll('.edgePaths .edgePath');
+      edgeEls.forEach(el => {
+        const id = el.id || '';
+        // Mermaid edge IDs are like "L-N0-N1-0"
+        const match = id.match(/L-(N\d+)-(N\d+)/);
+        if (match) {
+          edges.push({ el, source: match[1], target: match[2] });
+        }
+      });
+      // Also try parsing from flowchart-* pattern
+      if (edges.length === 0) {
+        document.querySelectorAll('[id*="flowchart-"]').forEach(el => {
+          // try to extract from class or id
+        });
+        // Fallback: parse edge labels container
+        const paths = document.querySelectorAll('g.edgePath');
+        paths.forEach(el => {
+          const id = el.getAttribute('id') || el.id || '';
+          const match = id.match(/L-(N\d+)-(N\d+)/) || id.match(/(\w+)-(\w+)/);
+          if (match) edges.push({ el, source: match[1], target: match[2] });
+        });
+      }
+    }
+
+    function attachNodeClickHandlers() {
+      const nodes = document.querySelectorAll('.node');
+      nodes.forEach(node => {
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', (e) => {
+          e.stopPropagation();
+          highlightConnections(node);
+        });
+      });
+    }
+
+    function getNodeId(nodeEl) {
+      // Mermaid gives nodes IDs like "flowchart-N0-123" or just uses the node key
+      const id = nodeEl.id || '';
+      const match = id.match(/flowchart-(N\d+)/) || id.match(/(N\d+)/);
+      return match ? match[1] : id;
+    }
+
+    function highlightConnections(selectedNode) {
+      const nodeId = getNodeId(selectedNode);
+      if (!nodeId) return;
+
+      // Find connected node IDs
+      const connectedNodes = new Set([nodeId]);
+      const connectedEdges = new Set();
+
+      edges.forEach((edge, idx) => {
+        if (edge.source === nodeId || edge.target === nodeId) {
+          connectedNodes.add(edge.source);
+          connectedNodes.add(edge.target);
+          connectedEdges.add(idx);
+        }
+      });
+
+      // Apply classes to all nodes
+      document.querySelectorAll('.node').forEach(n => {
+        const nId = getNodeId(n);
+        n.classList.remove('node-dimmed', 'node-highlighted');
+        if (connectedNodes.has(nId)) {
+          n.classList.add('node-highlighted');
+        } else {
+          n.classList.add('node-dimmed');
+        }
+      });
+
+      // Apply classes to all edges
+      const allEdgeEls = document.querySelectorAll('.edgePath');
+      allEdgeEls.forEach((el, idx) => {
+        el.classList.remove('edge-dimmed', 'edge-highlighted');
+        // Check if this edge connects to our node
+        const id = el.id || '';
+        const match = id.match(/L-(N\d+)-(N\d+)/);
+        if (match && (match[1] === nodeId || match[2] === nodeId)) {
+          el.classList.add('edge-highlighted');
+        } else {
+          el.classList.add('edge-dimmed');
+        }
+      });
+
+      // Also handle edgeLabels
+      document.querySelectorAll('.edgeLabel').forEach(el => {
+        const parent = el.closest('.edgePath');
+        if (!parent) {
+          el.classList.add('edge-dimmed');
+        }
+      });
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.node').forEach(n => {
+        n.classList.remove('node-dimmed', 'node-highlighted');
+      });
+      document.querySelectorAll('.edgePath').forEach(el => {
+        el.classList.remove('edge-dimmed', 'edge-highlighted');
+      });
+      document.querySelectorAll('.edgeLabel').forEach(el => {
+        el.classList.remove('edge-dimmed');
+      });
+    }
+
+    // Pan & Zoom
+    const container = document.getElementById('graph-container');
+    const wrapper = document.getElementById('graph-wrapper');
+
+    function applyTransform() {
+      wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    function zoomIn() { scale = Math.min(scale * 1.3, 5); applyTransform(); }
+    function zoomOut() { scale = Math.max(scale * 0.7, 0.1); applyTransform(); }
+
+    function resetView() {
+      const svg = wrapper.querySelector('svg');
+      if (svg) {
+        const rect = container.getBoundingClientRect();
+        const svgW = svg.getBoundingClientRect().width / scale;
+        const svgH = svg.getBoundingClientRect().height / scale;
+        scale = Math.min(rect.width / svgW, rect.height / svgH, 1) * 0.9;
+        translateX = (rect.width - svgW * scale) / 2;
+        translateY = (rect.height - svgH * scale) / 2;
+      } else {
+        scale = 1; translateX = 0; translateY = 0;
+      }
+      applyTransform();
+    }
+
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const rect = container.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      const newScale = Math.max(0.1, Math.min(5, scale * delta));
+      translateX = mx - (mx - translateX) * (newScale / scale);
+      translateY = my - (my - translateY) * (newScale / scale);
+      scale = newScale;
+      applyTransform();
+    }, { passive: false });
+
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.node')) return;
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+    });
+    container.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      applyTransform();
+    });
+    container.addEventListener('mouseup', () => { isDragging = false; });
+    container.addEventListener('mouseleave', () => { isDragging = false; });
+
+    // Click on empty area to clear
+    container.addEventListener('click', (e) => {
+      if (!e.target.closest('.node')) clearSelection();
+    });
+
+    loadGraph();
+  </script>
+</body>
+</html>

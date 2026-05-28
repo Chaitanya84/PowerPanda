@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: powerpanda
+    runtime: python
+    buildCommand: pip install -r req.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: OPENAI_EMBED_MODEL
+        value: text-embedding-ada-002
+      - key: PYTHON_VERSION
+        value: "3.12.0"

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="author" content="Chaitanya Priya"/>
+  <meta name="copyright" content="© 2026 Chaitanya Priya. All rights reserved."/>
+  <title>PowerPanda — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14;
+      --bg2: #13161e;
+      --bg3: #1a1e2a;
+      --border: #252a38;
+      --accent: #5b6ef5;
+      --accent2: #8b5cf6;
+      --accent-glow: rgba(91,110,245,0.25);
+      --text: #e2e6f3;
+      --text-muted: #5a6080;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, rgba(91,110,245,0.08) 0%, transparent 60%), var(--bg);
+    }
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+    .brand {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .brand img {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 4px 24px rgba(91,110,245,0.35));
+    }
+    .brand h1 {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+    .brand p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+    }
+    .card h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: box-shadow 0.2s, transform 0.1s;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+    .btn-login:hover {
+      box-shadow: 0 6px 24px var(--accent-glow);
+    }
+    .btn-login:active { transform: scale(0.97); }
+    .error-msg {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span { padding: 0 12px; }
+    .signup-info {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .signup-info h3 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .signup-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+    .signup-info a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .signup-info a:hover { text-decoration: underline; }
+    .signup-info .fields {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: left;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="brand">
+      <img src="/assets/Logo.png?v=2" alt="PowerPanda Logo"/>
+      <h1>PowerPanda</h1>
+      <p>Knowledge Graph RAG Engine</p>
+    </div>
+
+    <div class="card">
+      <h2>Sign In</h2>
+      <div class="error-msg" id="errorMsg"></div>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required autocomplete="username"/>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password"/>
+        </div>
+        <button type="submit" class="btn-login">Sign In →</button>
+      </form>
+
+      <div class="divider"><span>Don't have access?</span></div>
+
+      <div class="signup-info">
+        <h3>📧 Request Access</h3>
+        <p>Send an email to <a href="mailto:aelien@outlook.com?subject=PowerPanda Access Request&body=Name:%0AAge:%0ASex:%0ALocation:%0AReason for access:">aelien@outlook.com</a> with the following details:</p>
+        <div class="fields">
+          • Full Name<br/>
+          • Age<br/>
+          • Sex<br/>
+          • Location<br/>
+          • Why you need access to PowerPanda
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">© 2026 Chaitanya Priya. All rights reserved. | PowerPanda™</div>
+  </div>
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('errorMsg');
+
+      if (!username || !password) {
+        errorEl.textContent = 'Please enter both username and password.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Send login request to backend
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (ok) {
+          // Store token/session and redirect to main app
+          sessionStorage.setItem('pp_auth', data.token || 'authenticated');
+          window.location.href = '/app';
+        } else {
+          errorEl.textContent = data.detail || 'Invalid username or password.';
+          errorEl.style.display = 'block';
+        }
+      })
+      .catch(() => {
+        errorEl.textContent = 'Connection error. Please try again.';
+        errorEl.style.display = 'block';
+      });
+    }
+  </script>
+</body>
+</html>

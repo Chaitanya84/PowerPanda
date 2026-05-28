@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="author" content="Chaitanya Priya"/>
+  <meta name="copyright" content="© 2026 Chaitanya Priya. All rights reserved."/>
+  <title>PowerPanda</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="/assets/Logo.png?v=2" alt="Logo"/>
+    <span>PowerPanda</span>
+  </div>
+
+  <div class="sidebar-section">
+    <label>API Key</label>
+    <input type="password" id="apiKey" placeholder="Enter OpenAI API key…"/>
+  </div>
+
+  <div class="sidebar-section">
+    <label>Graph Name</label>
+    <input type="text" id="graphName" value="powerpanda"/>
+  </div>
+
+  <div class="sidebar-section">
+    <label>Traversal Hops <span class="val" id="hopsVal">2</span></label>
+    <input type="range" id="hops" min="1" max="4" value="2"
+           oninput="document.getElementById('hopsVal').textContent=this.value"/>
+  </div>
+
+  <div class="sidebar-section">
+    <label>Top-K Docs <span class="val" id="topKDocsVal">4</span></label>
+    <input type="range" id="topKDocs" min="1" max="10" value="4"
+           oninput="document.getElementById('topKDocsVal').textContent=this.value"/>
+  </div>
+
+  <div class="sidebar-section">
+    <label>Top-K Nodes <span class="val" id="topKNodesVal">5</span></label>
+    <input type="range" id="topKNodes" min="1" max="15" value="5"
+           oninput="document.getElementById('topKNodesVal').textContent=this.value"/>
+  </div>
+
+  <div class="sidebar-section">
+    <button class="btn btn-danger" onclick="clearData()">🗑 Clear All Data</button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div id="statusDot" class="status-dot idle"></div>
+    <span id="statusText">Idle</span>
+  </div>
+  <div class="copyright-notice">
+    © 2026 Chaitanya Priya. All rights reserved.<br/>PowerPanda™
+  </div>
+</aside>
+
+<!-- ── Main ────────────────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- Hero Branding -->
+  <section class="hero-brand full-width">
+    <img src="/assets/Logo.png?v=2" alt="PowerPanda Logo" class="hero-logo"/>
+    <h1 class="hero-title">PowerPanda</h1>
+    <p class="hero-subtitle">Knowledge Graph RAG Engine</p>
+  </section>
+
+  <!-- Upload Panel -->
+  <section class="panel" id="uploadPanel">
+    <h2 class="panel-title">📂 Upload Documents</h2>
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">⬆</div>
+      <p>Drag &amp; drop files here or <label class="link" for="fileInput">browse</label></p>
+      <p class="hint">PDF · DOCX · XLSX · CSV · TXT</p>
+      <input type="file" id="fileInput" multiple
+             accept=".pdf,.docx,.xlsx,.csv,.txt" hidden
+             onchange="handleFileSelect(this.files)"/>
+    </div>
+
+    <div id="fileList" class="file-list hidden"></div>
+
+    <button class="btn btn-primary" id="processBtn" onclick="processFiles()" disabled>
+      ⚡ Process Files
+    </button>
+
+    <div id="uploadStatus" class="status-msg hidden"></div>
+  </section>
+
+  <!-- Embedded Files -->
+  <section class="panel" id="embeddedPanel">
+    <h2 class="panel-title">📋 Embedded Files</h2>
+    <button class="btn btn-graph" onclick="window.open('/graph-viewer', '_blank')">🕸 View Knowledge Graph</button>
+    <div id="embeddedList" class="embedded-list">
+      <p class="muted">No files embedded yet.</p>
+    </div>
+  </section>
+
+  <!-- Query -->
+  <section class="panel full-width" id="queryPanel">
+    <h2 class="panel-title">🔍 Ask a Question</h2>
+    <div class="query-box">
+      <textarea id="queryInput" rows="3"
+                placeholder="e.g. Who funds both BlueStar and SkyDrone?"></textarea>
+      <button class="btn btn-primary" id="queryBtn" onclick="runQuery()">Ask →</button>
+    </div>
+
+    <div id="queryResult" class="result-box hidden">
+      <div class="result-answer" id="answerText"></div>
+      <div class="result-meta">
+        <div id="sourcesBox" class="meta-block hidden">
+          <span class="meta-label">📄 Sources</span>
+          <div id="sourcesList"></div>
+        </div>
+        <div id="graphCtxBox" class="meta-block hidden">
+          <span class="meta-label">🕸 Graph Context</span>
+          <pre id="graphCtxText"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div id="queryLoader" class="loader hidden">
+      <div class="spinner"></div><span>Thinking…</span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  <p>© 2026 Chaitanya Priya. All rights reserved. | PowerPanda™</p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
